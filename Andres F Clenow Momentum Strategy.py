@@ -21,11 +21,14 @@ import pandas as pd
 
 
 class AFCMOM(QCAlgorithm):
+    '''Basic template algorithm simply initializes the date range and cash'''
+
     def Initialize(self):
+        '''Initialise the data and resolution required, as well as the cash and start-end dates for your algorithm. All algorithms must initialized.'''
         self.first = -1
         self.bi_weekly = 0
-        self.SetStartDate(2006, 03, 07)
-        self.SetEndDate(2006, 06, 07)
+        self.SetStartDate(2006, 1, 1)
+        self.SetEndDate(2009, 1, 1)
         self.SetCash(100000)
         self.spy = self.AddEquity("SPY", Resolution.Daily).Symbol
         self.Debug("numpy test >>> print numpy.pi: " + str(np.pi))
@@ -91,13 +94,13 @@ class AFCMOM(QCAlgorithm):
 
     def gapper(self, security, period):
         if not self.Securities.ContainsKey(security):
-            return 0
+            return True
         security_data = self.History(security, period, Resolution.Daily)
-        if 'close' not in security_data:
-            return 0
-        close_data = [float(data) for data in security_data['close'] if 0 not in security_data['close']]
-        if not close_data:
-            return 0
+        if 'close' not in security_data.columns:
+            return True
+        if len(security_data['close']) < 2:
+            return True
+        close_data = [float(data) for data in security_data['close']]
         return np.max(np.abs(np.diff(close_data)) / close_data[:-1]) >= 0.15
 
     def get_slope(self, security, period):
@@ -116,8 +119,6 @@ class AFCMOM(QCAlgorithm):
             return 0
         self.first += 1
         security_data = self.History([security], period, Resolution.Daily)
-        if 'close' not in security_data:
-            return 0
         c_data = [float(data) for data in security_data['close']]
         l_data = [float(data) for data in security_data['low']]
         h_data = [float(data) for data in security_data['high']]
@@ -135,6 +136,4 @@ class AFCMOM(QCAlgorithm):
         if not self.Securities.ContainsKey(security):
             return 0
         security_data = self.History(security, period, Resolution.Daily)
-        if 'close' not in security_data:
-            return 0
         return np.mean([close for close in security_data['close']])
